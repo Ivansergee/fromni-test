@@ -1,11 +1,11 @@
 const { Pool } = require('pg');
 
 const pool = new Pool({
-  user: 'ivan',
+  user: 'postgres',
   host: 'localhost',
-  database: 'fromni',
+  database: 'postgres',
   password: '9371',
-  port: 32768,
+  port: 5432,
 });
 
 pool.connect((err, client, release) => {
@@ -14,6 +14,7 @@ pool.connect((err, client, release) => {
   }
   console.log('Connected to PostgreSQL');
 });
+
 
 
 const getCampaigns = (req, res) => {
@@ -28,9 +29,26 @@ const getCampaigns = (req, res) => {
 const getCampaignById = (req, res) => {
   id = parseInt(req.params.id)
   pool.query(
-    `SELECT * FROM campaigns
-    JOIN messages ON campaigns.id = messages.campaign_id
-    WHERE campaigns.id = $1`,
+    `SELECT campaigns.id, campaigns.name,
+    json_agg(
+      json_build_object(
+          'id', messages.id,
+          'text', messages.text,
+          'messenger', messengers.name,
+          'keyboard_type', messages.keyboard_type,
+          'buttons', (SELECT json_agg(
+                        json_build_object(
+                             'id', buttons.id,
+                             'text', buttons.text))
+                      FROM buttons
+                      WHERE buttons.message_id = messages.id)
+        )
+    ) AS messages
+    FROM campaigns
+    JOIN messages ON messages.campaign_id = campaigns.id
+    JOIN messengers ON messages.messenger_id = messengers.id
+    WHERE campaigns.id = $1
+    GROUP BY campaigns.id`,
     [id], (error, results) => {
     if (error) {
       throw error

@@ -1,11 +1,13 @@
 const express = require('express');
 const bodyParser = require('body-parser');
+const cors = require('cors')
 const app = express();
 const port = 3000;
 
-const db = require('./queries')
+const handlers = require('./handlers');
 
 
+app.use(cors())
 app.use(bodyParser.json());
 app.use(
   bodyParser.urlencoded({
@@ -17,11 +19,11 @@ app.get('/', (req, res) => {
   res.send('Hello World!')
 });
 
-app.get('/campaigns', db.getCampaigns);
-app.get('/campaigns/:id', db.getCampaignById);
-app.put('/campaigns/:id', db.updateCampaign);
-app.post('/campaigns', db.createCampaign);
-app.delete('/campaigns/:id', db.deleteCampaign);
+app.get('/campaigns', handlers.getCampaigns);
+app.get('/campaigns/:id', handlers.getCampaignById);
+app.put('/campaigns/:id', handlers.updateCampaign);
+app.post('/campaigns', handlers.createCampaign);
+app.delete('/campaigns/:id', handlers.deleteCampaign);
 
 
 app.listen(port, () => {
