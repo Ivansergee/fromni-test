@@ -18,7 +18,7 @@ pool.connect((err, client, release) => {
 
 
 const getCampaigns = (req, res) => {
-  pool.query('SELECT * FROM campaigns ORDER BY id ASC', (error, results) => {
+  pool.query('SELECT * FROM campaigns ORDER BY id DESC', (error, results) => {
     if (error) {
       throw error
     }
@@ -39,7 +39,8 @@ const getCampaignById = (req, res) => {
           'buttons', (SELECT json_agg(
                         json_build_object(
                              'id', buttons.id,
-                             'text', buttons.text))
+                             'text', buttons.text,
+                             'type', buttons.type))
                       FROM buttons
                       WHERE buttons.message_id = messages.id)
         )
@@ -64,7 +65,7 @@ const createCampaign = (req, res) => {
     if (error) {
       throw error
     }
-    res.status(201).json(results.rows)
+    res.status(201).json(results.rows[0])
   })
 }
 
@@ -89,21 +90,8 @@ const deleteCampaign = (req, res) => {
   })
 }
 
-const createCampMessage = (req, res) => {
-  const { name } = req.body
-
-  pool.query('INSERT INTO campaigns (name) VALUES ($1) RETURNING *', [name], (error, results) => {
-    if (error) {
-      throw error
-    }
-    res.status(201).json(results.rows)
-  })
-}
-
-const updateCampMessage = (req, res) => {
-  const id = parseInt(req.params.id);
-  const {name} = req.body
-  pool.query('UPDATE campaigns SET name = $1 WHERE id = $2 RETURNING *', [name, id], (error, results) => {
+const getMessengers = (req, res) => {
+  pool.query('SELECT * FROM messengers ORDER BY id ASC', (error, results) => {
     if (error) {
       throw error
     }
@@ -111,14 +99,42 @@ const updateCampMessage = (req, res) => {
   })
 }
 
-const deleteCampMessage = (req, res) => {
-  id = parseInt(req.params.id)
-  pool.query('DELETE FROM campaigns WHERE id = $1 RETURNING *', [id], (error, results) => {
+const createMessage = (req, res) => {
+  const { campId, msngrId, text, kbType, order } = req.body
+  pool.query(
+    `INSERT INTO messages (campaign_id, messenger_id, text, keyboard_type, "order")
+    VALUES ($1, $2, $3, $4, $5) RETURNING *`,
+    [campId, msngrId, text, kbType, order], (error, results) => {
     if (error) {
       throw error
     }
-    res.status(200).json(results.rows)
+    res.status(201).json(results.rows[0])
   })
+}
+
+const createButton = (req, res) => {
+  const { msgId, buttons } = req.body;
+  let result = [];
+
+
+  const queryString = `INSERT INTO buttons (message_id, text, type) VALUES ($1, $2, $3) RETURNING *`;
+
+  async function runQueries(){
+    for (const button of buttons) {
+      const params = [msgId, button.text, button.type];
+      const item = await pool.query(queryString, params);
+      result.push(item.rows[0]);
+    }
+  }
+
+  runQueries()
+  .then(() => {
+    res.status(201).json(result);
+  })
+  .catch((err) => {
+    console.log(err);
+  })
+
 }
 
 module.exports = {
@@ -127,4 +143,7 @@ module.exports = {
     updateCampaign,
     createCampaign,
     deleteCampaign,
+    getMessengers,
+    createMessage,
+    createButton,
 }

@@ -25,6 +25,9 @@ app.put('/campaigns/:id', handlers.updateCampaign);
 app.post('/campaigns', handlers.createCampaign);
 app.delete('/campaigns/:id', handlers.deleteCampaign);
 
+app.get('/messengers', handlers.getMessengers);
+app.post('/messages', handlers.createMessage);
+app.post('/buttons', handlers.createButton);
 
 app.listen(port, () => {
   console.log(`Example app listening on port ${port}`);
