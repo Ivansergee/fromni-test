@@ -87,7 +87,7 @@
 import axios from 'axios';
 
 export default {
-  props: ['msngr', 'campId', 'msngrsLen', 'submit'],
+  props: ['msngr', 'campId', 'msngrsLen', 'send'],
   emits: ['move-up', 'move-down', 'submited'],
   data() {
     return {
@@ -102,11 +102,12 @@ export default {
     }
   },
   watch: {
-    submit(value) {
+    send(value) {
       if (value) {
         this.createMessage()
       }
     }
+
   },
   methods: {
     addButton() {
@@ -140,12 +141,12 @@ export default {
           axios
             .post('buttons/', buttonsPayload)
             .then(() => {
+              this.$emit('submited', {messengerId: this.msngr.id, status: true});
               this.showContent = false;
-              this.$emit('submited', {messengerId: this.msngr.id, status: true})
             })
             .catch((error) => {
               console.log(error);
-              this.$emit('submited', {messengerId: this.msngr.id, status: false})
+              this.$emit('submited', {messengerId: this.msngr.id, status: false});
             });
         })
         .catch((error) => {

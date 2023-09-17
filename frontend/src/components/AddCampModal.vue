@@ -27,16 +27,15 @@
         </div>
 
         <AddMessage
-          v-if="selectedMessengers.length > 0"
           v-for="(messenger, index) in selectedMessengers"
           :key="index"
           :msngr="messenger"
           :msngrsLen="options.length"
           :campId="campId"
-          :submit="submit"
+          :send="sendForms"
           @move-up="moveUp"
           @move-down="moveDown"
-          @submited="checkSubmit"
+          @submited="onSubmit"
           />
 
         <div class="level" v-if="messengersList.length > 0 && campId">
@@ -60,13 +59,16 @@
 
         <div class="field" >
           <div class="control">
-            <button class="button is-dark" @click="submitForms" v-if="campId">Сохранить</button>
+            <button class="button is-dark" @click="sendForms = true" v-if="campId">Сохранить</button>
           </div>
         </div>
 
 
       </div>
     </div>
+    <p class="title" v-if="checkStatus === 'success'">True</p>
+    <p class="title" v-if="checkStatus === 'error'">False</p>
+    <p class="title" v-if="checkStatus === 'sending'">Sending</p>
   </div>
 </template>
 
@@ -87,8 +89,8 @@ export default {
       messengersList: [],
       selectedMsngr: null,
       selectedMessengers: [],
-      submit: false,
-      submitStatus: [],
+      sendForms: false,
+      sendStatus: []
     }
   },
   created() {
@@ -97,15 +99,15 @@ export default {
     }
   },
   computed: {
-    allStatusTrue() {
-      const allTrue = this.submitStatus.every(item => item.status === true)
-      const hasFalse = this.submitStatus.some(item => item.status === false)
-      if (allTrue) {
-        this.$emit('submited', true)
-      } else if (hasFalse) {
-        this.$emit('submited', false)
+    checkStatus() {
+      if (this.sendStatus.some(result => result.status === null)) {
+        return 'sending';
+      } else if (this.sendResults.every(result => result.status === true)) {
+        return 'success';
+      } else {
+        return 'error';
       }
-    },
+    }
   },
   methods: {
     moveUp(id) {
@@ -143,7 +145,7 @@ export default {
         const msngrObj = this.messengersList.find(obj => obj.id === this.selectedMsngr);
         msngrObj.order = this.selectedMessengers.length + 1;
         this.selectedMessengers.push(msngrObj);
-        this.submitStatus.push({messengerId: msngrObj.id, status: null})
+        this.sendStatus.push({messengerId: msngrObj.id, status: null});
 
         for (let i = 0; i < this.messengersList.length; i++) {
           if (this.messengersList[i].id === this.selectedMsngr) {
@@ -166,16 +168,9 @@ export default {
         });
     },
 
-    submitForms() {
-      this.submit = true;
-    },
-
-    checkSubmit(data) {
-      console.log(data);
-      const statusObj = this.submitStatus.find(obj => obj.id === data.messengerId);
-      statusObj.status = data.status;
+    onSubmit(data) {
+      this.sendStatus.push(data);
     }
-
   }
 };
 </script>
