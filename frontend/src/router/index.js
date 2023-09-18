@@ -1,5 +1,6 @@
 import { createRouter, createWebHistory } from 'vue-router'
 import HomeView from '../views/HomeView.vue'
+import CampDetailsView from '../views/CampDetailsView.vue'
 
 
 const routes = [
@@ -10,6 +11,14 @@ const routes = [
       title: 'Fromni'
     },
     component: HomeView
+  },
+  {
+    path: '/:id',
+    name: 'detail',
+    meta: {
+      title: 'Fromni'
+    },
+    component: CampDetailsView
   },
 ]
 

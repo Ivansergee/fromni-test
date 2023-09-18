@@ -20,23 +20,20 @@
           </div>
         </div>
 
-        <div class="field" >
+        <div class="field">
           <div class="control">
             <button class="button is-success" @click="addCampaign" v-if="!campId">Далее</button>
           </div>
         </div>
 
         <AddMessage
-          v-for="(messenger, index) in selectedMessengers"
-          :key="index"
-          :msngr="messenger"
-          :msngrsLen="options.length"
-          :campId="campId"
-          :send="sendForms"
-          @move-up="moveUp"
-          @move-down="moveDown"
-          @submited="onSubmit"
-          />
+        v-for="(message, index) in messages"
+        :key="index"
+        :msngr="selectedMessengers[index]"
+        :message="message"
+        :maxOrder="selectedMessengers.length"
+        @update-message="updateMessages(index, $event)"
+        />
 
         <div class="level" v-if="messengersList.length > 0 && campId">
           <div class="level-left">
@@ -57,18 +54,14 @@
           </div>
         </div>
 
-        <div class="field" >
+        <div class="field">
           <div class="control">
-            <button class="button is-dark" @click="sendForms = true" v-if="campId">Сохранить</button>
+            <button class="button is-dark" @click="sendForm" v-if="campId">Сохранить</button>
           </div>
         </div>
 
-
       </div>
     </div>
-    <p class="title" v-if="checkStatus === 'success'">True</p>
-    <p class="title" v-if="checkStatus === 'error'">False</p>
-    <p class="title" v-if="checkStatus === 'sending'">Sending</p>
   </div>
 </template>
 
@@ -89,45 +82,16 @@ export default {
       messengersList: [],
       selectedMsngr: null,
       selectedMessengers: [],
-      sendForms: false,
-      sendStatus: []
+      messages: [],
     }
   },
   created() {
-    for (let msngr of this.options) {
-      this.messengersList.push({ id: msngr.id, name: msngr.name })
+    for (const msngr of this.options) {
+      this.messengersList.push(msngr);
     }
   },
-  computed: {
-    checkStatus() {
-      if (this.sendStatus.some(result => result.status === null)) {
-        return 'sending';
-      } else if (this.sendResults.every(result => result.status === true)) {
-        return 'success';
-      } else {
-        return 'error';
-      }
-    }
-  },
+  
   methods: {
-    moveUp(id) {
-      const index = this.selectedMessengers.findIndex(item => item.id === id);
-      if (index > 0) {
-        this.selectedMessengers.splice(index - 1, 0, this.selectedMessengers.splice(index, 1)[0]);
-        for (let i = 0; i < this.selectedMessengers.length; i++) {
-          this.selectedMessengers[i].order = i + 1;
-        };
-      }
-    },
-    moveDown(id) {
-      const index = this.selectedMessengers.findIndex(item => item.id === id);
-      if (index >= 0 && index < this.selectedMessengers.length - 1) {
-        this.selectedMessengers.splice(index + 1, 0, this.selectedMessengers.splice(index, 1)[0]);
-        for (let i = 0; i < this.selectedMessengers.length; i++) {
-          this.selectedMessengers[i].order = i + 1;
-        };
-      }
-    },
     toggleContent(e) {
       const link = e.target;
       const container = link.parentNode.parentNode;
@@ -139,13 +103,13 @@ export default {
       const container = chb.parentNode.parentNode.parentNode;
       const KbSettings = container.querySelector('.kb-settings');
       KbSettings.classList.toggle('is-hidden');
-    }, 
+    },
     addMessenger() {
       if (this.selectedMsngr) {
         const msngrObj = this.messengersList.find(obj => obj.id === this.selectedMsngr);
-        msngrObj.order = this.selectedMessengers.length + 1;
+        const order = this.selectedMessengers.length + 1;
         this.selectedMessengers.push(msngrObj);
-        this.sendStatus.push({messengerId: msngrObj.id, status: null});
+        this.messages.push({ messengerId: this.selectedMsngr, kbType: '', text: '', order: order, buttons: [{ text: '', type: 'std' }] })
 
         for (let i = 0; i < this.messengersList.length; i++) {
           if (this.messengersList[i].id === this.selectedMsngr) {
@@ -168,9 +132,15 @@ export default {
         });
     },
 
-    onSubmit(data) {
-      this.sendStatus.push(data);
+    updateMessages(index, newMsg) {
+      this.messages[index] = newMsg;
+    },
+
+    sendForm() {
+      
+      console.log(this.messages);
     }
+
   }
 };
 </script>

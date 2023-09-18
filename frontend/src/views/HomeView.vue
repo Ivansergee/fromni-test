@@ -10,41 +10,28 @@
           <div class="level is-mobile">
             <div class="level-left">
               <div class="level-item">
-                <b>{{ campaign.name }}</b>
+                <router-link :to="{ name: 'detail', params: {id: campaign.id} }"><b>{{ campaign.name }}</b></router-link>
               </div>
             </div>
             <div class="level-right">
               <div class="level-item">
-                <button class="button is-success">Запустить</button>
+                <button class="button is-success" @click="showRun">Запустить</button>
               </div>
             </div>
           </div>
         </div>
       </div>
     </div>
-    <AddCampModal
-      v-if="messengers.length > 0"
-      :showModal="showModal"
-      :options="messengers"
-      @close="showModal = false"
-      @added="getCampaigns();"
-      @submited="showSubmited"
-    />
+    <AddCampModal v-if="messengers.length > 0" :showModal="showModal" :options="messengers" @close="showModal = false"
+      @added="getCampaigns()" @submited="showToast" />
 
-    <div class="notification is-success" v-if="submited">
-      <button class="delete" @click="submited = null"></button>
-      Кампания создана!
-    </div>
-    <div class="notification is-danger" v-if="submited === false">
-      <button class="delete" @click="submited = null"></button>
-      Что-то пошло не так!
-    </div>
   </div>
 </template>
 
 <script>
 import axios from 'axios';
 import AddCampModal from '../components/AddCampModal.vue';
+import { toast } from 'bulma-toast';
 
 export default {
   components: {
@@ -56,7 +43,6 @@ export default {
       campaigns: [],
       messengers: [],
       messengersList: [],
-      submited: null
     }
   },
   mounted() {
@@ -76,12 +62,38 @@ export default {
           this.messengers = res.data;
         })
     },
-    showSubmited(val) {
-      if (val) {
-        this.submited = true;
+
+    showToast(status) {
+      if (status) {
+        toast({
+          message: "Кампания создана!",
+          type: "is-success",
+          dismissible: true,
+          duration: 3000,
+          pauseOnHover: true,
+          position: "top-center",
+        });
       } else {
-        this.submited = false;
+        toast({
+          message: "Что-то пошло не так!",
+          type: "is-danger",
+          dismissible: true,
+          duration: 3000,
+          pauseOnHover: true,
+          position: "top-center",
+        });
       }
+    },
+
+    showRun() {
+      toast({
+          message: "Сообщения отправлены!",
+          type: "is-success",
+          dismissible: true,
+          duration: 3000,
+          pauseOnHover: true,
+          position: "top-center",
+        });
     }
   }
 }
