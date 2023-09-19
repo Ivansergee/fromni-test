@@ -1,11 +1,13 @@
 const { Pool } = require('pg');
+require('dotenv').config();
+
 
 const pool = new Pool({
-  user: 'postgres',
-  host: 'localhost',
-  database: 'postgres',
-  password: '9371',
-  port: 5432,
+  user: process.env.DB_USER,
+  host: process.env.HOST,
+  database: process.env.DB_NAME,
+  password: process.env.PASSWORD,
+  port: process.env.PORT,
 });
 
 pool.connect((err, client, release) => {
@@ -14,7 +16,6 @@ pool.connect((err, client, release) => {
   }
   console.log('Connected to PostgreSQL');
 });
-
 
 
 const getCampaigns = (req, res) => {
@@ -36,6 +37,7 @@ const getCampaignById = (req, res) => {
           'text', messages.text,
           'messenger', messengers.name,
           'keyboard_type', messages.keyboard_type,
+          'order', messages."order",
           'buttons', (SELECT json_agg(
                         json_build_object(
                              'id', buttons.id,
@@ -51,43 +53,53 @@ const getCampaignById = (req, res) => {
     WHERE campaigns.id = $1
     GROUP BY campaigns.id`,
     [id], (error, results) => {
-    if (error) {
-      throw error
-    }
-    res.status(200).json(results.rows)
-  })
+      if (error) {
+        throw error
+      }
+      res.status(200).json(results.rows)
+    })
 }
 
 const createCampaign = (req, res) => {
-  const { name } = req.body
+  const { name, messages } = req.body;
 
-  pool.query('INSERT INTO campaigns (name) VALUES ($1) RETURNING *', [name], (error, results) => {
-    if (error) {
-      throw error
-    }
-    res.status(201).json(results.rows[0])
-  })
-}
+  pool.query('INSERT INTO campaigns (name) VALUES ($1) RETURNING id', [name])
+    .then((result) => {
+      const campId = result.rows[0].id;
+      const messagePromises = [];
 
-const updateCampaign = (req, res) => {
-  const id = parseInt(req.params.id);
-  const {name} = req.body
-  pool.query('UPDATE campaigns SET name = $1 WHERE id = $2 RETURNING *', [name, id], (error, results) => {
-    if (error) {
-      throw error
-    }
-    res.status(200).json(results.rows)
-  })
-}
+      messages.forEach((message) => {
+        const messagePromise = pool.query(
+          `INSERT INTO messages (campaign_id, messenger_id, text, keyboard_type, "order") VALUES ($1, $2, $3, $4, $5) RETURNING id`,
+          [campId, message.messengerId, message.text, message.kbType, message.order])
+          .then((result) => {
+            const messageId = result.rows[0].id;
+            const buttonPromises = [];
 
-const deleteCampaign = (req, res) => {
-  id = parseInt(req.params.id)
-  pool.query('DELETE FROM campaigns WHERE id = $1 RETURNING *', [id], (error, results) => {
-    if (error) {
-      throw error
-    }
-    res.status(200).json(results.rows)
-  })
+            message.buttons.forEach((button) => {
+              const buttonPromise = pool.query('INSERT INTO buttons (message_id, text, type) VALUES ($1, $2, $3)', [messageId, button.text, button.type]);
+              buttonPromises.push(buttonPromise);
+            });
+
+            return Promise.all(buttonPromises);
+          });
+
+        messagePromises.push(messagePromise);
+      });
+
+      return Promise.all(messagePromises);
+    })
+    .then(() => {
+      res.status(201).json({message: 'кампания создана'})
+    })
+    .catch((error) => {
+      if (error.code === '23505') {
+        res.status(500).json({message: 'Кампания с таким именем уже существует'})
+      } else {
+        res.status(500).json({message: 'Ошибка сервера'})
+      }
+    });
+
 }
 
 const getMessengers = (req, res) => {
@@ -95,55 +107,14 @@ const getMessengers = (req, res) => {
     if (error) {
       throw error
     }
+
     res.status(200).json(results.rows)
   })
 }
 
-const createMessage = (req, res) => {
-  const { campId, msngrId, text, kbType, order } = req.body
-  pool.query(
-    `INSERT INTO messages (campaign_id, messenger_id, text, keyboard_type, "order")
-    VALUES ($1, $2, $3, $4, $5) RETURNING *`,
-    [campId, msngrId, text, kbType, order], (error, results) => {
-    if (error) {
-      throw error
-    }
-    res.status(201).json(results.rows[0])
-  })
-}
-
-const createButton = (req, res) => {
-  const { msgId, buttons } = req.body;
-  let result = [];
-
-
-  const queryString = `INSERT INTO buttons (message_id, text, type) VALUES ($1, $2, $3) RETURNING *`;
-
-  async function runQueries(){
-    for (const button of buttons) {
-      const params = [msgId, button.text, button.type];
-      const item = await pool.query(queryString, params);
-      result.push(item.rows[0]);
-    }
-  }
-
-  runQueries()
-  .then(() => {
-    res.status(201).json(result);
-  })
-  .catch((err) => {
-    console.log(err);
-  })
-
-}
-
 module.exports = {
-    getCampaigns,
-    getCampaignById,
-    updateCampaign,
-    createCampaign,
-    deleteCampaign,
-    getMessengers,
-    createMessage,
-    createButton,
+  getCampaigns,
+  getCampaignById,
+  createCampaign,
+  getMessengers,
 }
