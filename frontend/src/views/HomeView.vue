@@ -22,8 +22,8 @@
         </div>
       </div>
     </div>
-    <AddCampModal v-if="messengers.length > 0" :showModal="showModal" :options="messengers" @close="showModal = false"
-      @added="getCampaigns()" @submited="showToast" />
+    <AddCampModal v-if="messengers.length > 0" :showModal="showModal" :messengers="messengers" @close="showModal = false"
+      @submited="showSuccess" />
 
   </div>
 </template>
@@ -63,26 +63,17 @@ export default {
         })
     },
 
-    showToast(status) {
-      if (status) {
-        toast({
-          message: "Кампания создана!",
-          type: "is-success",
-          dismissible: true,
-          duration: 3000,
-          pauseOnHover: true,
-          position: "top-center",
-        });
-      } else {
-        toast({
-          message: "Что-то пошло не так!",
-          type: "is-danger",
-          dismissible: true,
-          duration: 3000,
-          pauseOnHover: true,
-          position: "top-center",
-        });
-      }
+    showSuccess() {
+      this.showModal = false;
+      this.getCampaigns();
+      toast({
+        message: "Кампания создана!",
+        type: "is-success",
+        dismissible: true,
+        duration: 3000,
+        pauseOnHover: true,
+        position: "top-center",
+      });
     },
 
     showRun() {

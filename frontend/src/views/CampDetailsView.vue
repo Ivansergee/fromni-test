@@ -12,20 +12,20 @@
             <p><b>Сообщение: </b> <br> <span>{{ message.text }}</span></p>
           </div>
 
-          <p><b>Клавиатура:</b></p>
-
-          <div>
+          
+          <div v-if="message.keyboard_type">
+            <p><b>Клавиатура:</b></p>
             <p>
               <b>&emsp;Тип клавиатуры: </b>
               <span v-if="message.keyboard_type === 'std'">Стандартная</span>
               <span v-if="message.keyboard_type === 'inline'">Inline</span>
             </p>
-          </div>
-          <p><b>&emsp;Кнопки:</b></p>
-          <div v-for="button in message.buttons" :key="button.id">
-            <b>&emsp;&emsp;"{{ button.text }}" </b>
-            <span v-if="button.type === 'std'">С быстрым ответом</span>
-            <span v-if="button.type === 'link'">С ссылкой</span>
+            <p><b>&emsp;Кнопки:</b></p>
+            <div v-for="button in message.buttons" :key="button.id">
+              <b>&emsp;&emsp;"{{ button.text }}" </b>
+              <span v-if="button.type === 'std'">С быстрым ответом</span>
+              <span v-if="button.type === 'link'">С ссылкой</span>
+            </div>
           </div>
         </div>
       </div>
